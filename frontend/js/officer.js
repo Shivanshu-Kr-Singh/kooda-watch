@@ -19,6 +19,19 @@
   var spotsLayer = L.layerGroup();
   var wardsLayer = null;
 
+  // Ward colouring: which number paints the wards, and the totals behind it.
+  var wardLayers = [];             // [{ feature, layer }] for every drawn ward
+  var wardTotals = new Map();      // feature -> { reports, hotspots, longestDays }
+  var dataLoaded = false;
+  var colourMode = "off";          // off | reports | hotspots | longest
+  var breaks = null;
+
+  var METRICS = {
+    reports:  { name: "Reports",      value: function (s) { return s.reports; },     show: function (v) { return String(Math.round(v)); } },
+    hotspots: { name: "Hotspots",     value: function (s) { return s.hotspots; },    show: function (v) { return String(Math.round(v)); } },
+    longest:  { name: "Longest open", value: function (s) { return s.longestDays; },  show: function (v) { return G.formatDuration(v); } }
+  };
+
   /* ---------- map ---------- */
 
   var map = L.map("map", { zoomControl: true }).setView(DELHI_CENTER, 11);
@@ -32,6 +45,7 @@
   map.createPane("spots").style.zIndex = 450;
   spotsLayer.addTo(map);
 
+  var wardLegendEl = null;
   var legend = L.control({ position: "bottomright" });
   legend.onAdd = function () {
     var div = L.DomUtil.create("div", "legend");
@@ -39,10 +53,16 @@
       "<b>Open for</b><br>" +
       "<i style='background:" + G.ageColor(0) + "'></i>under 3 days<br>" +
       "<i style='background:" + G.ageColor(5) + "'></i>3 to 14 days<br>" +
-      "<i style='background:" + G.ageColor(20) + "'></i>over 14 days" +
-      (WARD_SOURCE_NOTE
-        ? "<div style='margin-top:.35rem;color:#5f6b73;font-size:.72rem'>" + G.escapeHtml(WARD_SOURCE_NOTE) + "</div>"
-        : "");
+      "<i style='background:" + G.ageColor(20) + "'></i>over 14 days";
+    wardLegendEl = document.createElement("div");
+    wardLegendEl.className = "ward-legend";
+    div.appendChild(wardLegendEl);
+    if (WARD_SOURCE_NOTE) {
+      var note = document.createElement("div");
+      note.className = "fine";
+      note.textContent = WARD_SOURCE_NOTE;
+      div.appendChild(note);
+    }
     return div;
   };
   legend.addTo(map);
@@ -61,22 +81,84 @@
     }).then(function (geojson) {
       wardIndex = G.buildWardIndex(geojson);
       if (!wardIndex.length) throw new Error("empty");
+      wardLayers = [];
       wardsLayer = L.geoJSON(geojson, {
         pane: "wards",
-        style: { color: "#2f5d8a", weight: 1, fillColor: "#2f5d8a", fillOpacity: 0.04 },
+        style: wardStyle,
         onEachFeature: function (feature, layer) {
-          layer.bindTooltip(G.escapeHtml(G.wardLabel(feature.properties)), { sticky: true });
-          layer.on("mouseover", function () { layer.setStyle({ weight: 2, fillOpacity: 0.12 }); });
-          layer.on("mouseout", function () { wardsLayer.resetStyle(layer); });
+          wardLayers.push({ feature: feature, layer: layer });
+          layer.bindTooltip(wardTooltip(feature), { sticky: true });
+          layer.on("mouseover", function () { layer.setStyle({ weight: 2.5, color: "#111827" }); });
+          layer.on("mouseout", function () { layer.setStyle(wardStyle(feature)); });
         }
       });
       if ($("layer-wards").checked) wardsLayer.addTo(map);
     }).catch(function () {
       $("layer-wards").checked = false;
       $("layer-wards").disabled = true;
+      $("ward-colour").disabled = true;
       setBanner("Ward boundaries are not loaded: add the file frontend/data/wards.geojson (see the README). " +
                 "The heatmap works without it, but ward names will not be shown.");
     });
+  }
+
+  /* ---------- ward colouring ---------- */
+
+  var PLAIN_WARD = { color: "#2f5d8a", weight: 1, fillColor: "#2f5d8a", fillOpacity: 0.04 };
+
+  function metricValue(feature) {
+    var totals = wardTotals.get(feature);
+    return totals ? METRICS[colourMode].value(totals) : 0;
+  }
+
+  function wardStyle(feature) {
+    if (colourMode === "off") return PLAIN_WARD;
+    var cls = G.classIndex(metricValue(feature), breaks);
+    if (cls === 0) return PLAIN_WARD;     // nothing reported: leave it uncoloured
+    return { color: "#6b7280", weight: 0.8, fillColor: G.HEAT_COLORS[cls], fillOpacity: 0.62 };
+  }
+
+  function wardTooltip(feature) {
+    var head = "<b>" + G.escapeHtml(G.wardLabel(feature.properties)) + "</b>";
+    if (!dataLoaded) return head;
+    var t = wardTotals.get(feature);
+    if (!t) return head + "<br>No reports";
+    return head + "<br>" + t.reports + (t.reports === 1 ? " report" : " reports") + " &middot; " +
+           t.hotspots + (t.hotspots === 1 ? " hotspot" : " hotspots") +
+           "<br>longest open " + G.escapeHtml(G.formatDuration(t.longestDays));
+  }
+
+  function updateWardLegend() {
+    if (!wardLegendEl) return;
+    if (colourMode === "off" || !breaks) {
+      wardLegendEl.innerHTML = colourMode === "off" ? "" :
+        "<b>Wards</b><div class='fine'>Nothing reported yet.</div>";
+      return;
+    }
+    var m = METRICS[colourMode];
+    var rows = [];
+    function row(cls, text) {
+      return "<i class='sq' style='background:" + G.HEAT_COLORS[cls] + "'></i>" + G.escapeHtml(text) + "<br>";
+    }
+    // Highest first, and skip a class if no ward falls in it.
+    if (breaks.max > breaks.mid) rows.push(row(3, "over " + m.show(breaks.mid)));
+    if (breaks.mid > breaks.low) rows.push(row(2, "over " + m.show(breaks.low) + " to " + m.show(breaks.mid)));
+    rows.push(row(1, "up to " + m.show(breaks.low)));
+    wardLegendEl.innerHTML = "<b>Wards: " + G.escapeHtml(m.name.toLowerCase()) + "</b><br>" + rows.join("") +
+      "<div class='fine'>Uncoloured = no reports. That does not mean the ward is clean: people may simply not have reported.</div>";
+  }
+
+  // Recompute class limits and repaint every ward (also refreshes the tooltips).
+  function repaintWards() {
+    breaks = null;
+    if (colourMode !== "off") {
+      breaks = G.classBreaks(wardLayers.map(function (w) { return metricValue(w.feature); }));
+    }
+    wardLayers.forEach(function (w) {
+      w.layer.setStyle(wardStyle(w.feature));
+      w.layer.setTooltipContent(wardTooltip(w.feature));
+    });
+    updateWardLegend();
   }
 
   /* ---------- hotspots ---------- */
@@ -115,6 +197,10 @@
     $("stat-oldest").textContent = spots.length ? G.formatDuration(spots[0].daysOpen) : "-";
     $("updated").textContent = "updated " +
       new Date(data.generatedAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+
+    wardTotals = G.wardStats(wardIndex, spots).byWard;
+    dataLoaded = true;
+    repaintWards();
 
     spotsLayer.clearLayers();
     if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
@@ -191,6 +277,15 @@
   $("layer-wards").addEventListener("change", function (ev) {
     if (!wardsLayer) return;
     if (ev.target.checked) wardsLayer.addTo(map); else map.removeLayer(wardsLayer);
+  });
+  $("ward-colour").addEventListener("change", function (ev) {
+    colourMode = ev.target.value;
+    // Colouring lives on the ward layer, so make sure that layer is showing.
+    if (colourMode !== "off" && wardsLayer && !$("layer-wards").checked) {
+      $("layer-wards").checked = true;
+      wardsLayer.addTo(map);
+    }
+    repaintWards();
   });
 
   /* ---------- start ---------- */

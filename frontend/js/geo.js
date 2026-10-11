@@ -133,7 +133,54 @@
     });
   }
 
+  /* ---------- per-ward totals and colour classes ---------- */
+
+  // Adds up the hotspots inside each ward. A hotspot counts for the ward that
+  // contains its centre. Returns a Map keyed by the ward's GeoJSON feature object.
+  function wardStats(index, hotspots) {
+    var byWard = new Map(), unmatched = 0;
+    (hotspots || []).forEach(function (h) {
+      var feature = findWard(index, h.lat, h.lng);
+      if (!feature) { unmatched++; return; }
+      var s = byWard.get(feature);
+      if (!s) { s = { reports: 0, hotspots: 0, longestDays: 0 }; byWard.set(feature, s); }
+      s.reports += h.reportCount;
+      s.hotspots += 1;
+      if (h.daysOpen > s.longestDays) s.longestDays = h.daysOpen;
+    });
+    return { byWard: byWard, unmatched: unmatched };
+  }
+
+  // Three classes with roughly equal numbers of wards (low / mid / high),
+  // worked out from the wards that have a value above zero. Returns null if none.
+  function classBreaks(values) {
+    var v = (values || []).filter(function (x) { return isFinite(x) && x > 0; })
+                          .sort(function (a, b) { return a - b; });
+    if (!v.length) return null;
+    var n = v.length;
+    return {
+      low: v[Math.floor((n - 1) / 3)],
+      mid: v[Math.floor((2 * (n - 1)) / 3)],
+      max: v[n - 1]
+    };
+  }
+
+  // 0 = nothing reported, 1 = low, 2 = mid, 3 = high.
+  function classIndex(value, breaks) {
+    if (!breaks || !(value > 0)) return 0;
+    if (value <= breaks.low) return 1;
+    if (value <= breaks.mid) return 2;
+    return 3;
+  }
+
+  // Index 1..3 matches classIndex. Yellow, orange, red as in a classic heat map.
+  var HEAT_COLORS = [null, "#fde047", "#fb923c", "#dc2626"];
+
   return {
+    wardStats: wardStats,
+    classBreaks: classBreaks,
+    classIndex: classIndex,
+    HEAT_COLORS: HEAT_COLORS,
     buildWardIndex: buildWardIndex,
     findWard: findWard,
     wardLabel: wardLabel,

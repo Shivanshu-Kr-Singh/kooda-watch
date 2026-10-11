@@ -10,7 +10,8 @@ Citizens photograph garbage dumps. Municipal officers see where they are on a he
 - Heatmap of reported spots (hotter = more reports).
 - Each hotspot is a dot coloured by age: green under 3 days, amber 3 to 14, red over 14.
 - Click a dot for the ward, first report, latest report, number of reports, how long it has been open, and photos.
-- Delhi ward boundaries as an outline layer. Hover a ward for its name.
+- Delhi ward boundaries as an outline layer. Hover a ward for its name and its totals (reports, hotspots, longest open).
+- **Colour wards by** (dropdown, off by default): fills every ward yellow, orange or red by number of reports, number of hotspots, or longest open. The three colours split the wards that have reports into roughly equal thirds, and the legend shows the ranges. Wards with no reports stay uncoloured, which does **not** mean they are clean: people may simply not have reported there.
 
 ### How a "hotspot" and "days open" work
 - Reports within **50 m** of each other become one hotspot (`RADIUS_M` in `backend/core.py`).
