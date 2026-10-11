@@ -35,8 +35,11 @@ class AwsStore:
         region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
         self._table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
         self._bucket = os.environ.get("IMAGE_BUCKET")
+        # "virtual" makes signed photo links use the regional host (bucket.s3.<region>...);
+        # the default builds the global host, which new buckets reject with HTTP 400.
         self._s3 = boto3.client("s3", region_name=region,
-                                config=Config(signature_version="s3v4"))
+                                config=Config(signature_version="s3v4",
+                                              s3={"addressing_style": "virtual"}))
 
     def put_report(self, item):
         self._table.put_item(Item=_to_dynamo(item))
