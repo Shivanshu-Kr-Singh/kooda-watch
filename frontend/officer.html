@@ -18,6 +18,14 @@
       <label><input type="checkbox" id="layer-heat" checked> Heatmap</label>
       <label><input type="checkbox" id="layer-spots" checked> Hotspots</label>
       <label><input type="checkbox" id="layer-wards" checked> Ward boundaries</label>
+      <label>Colour wards by
+        <select id="ward-colour">
+          <option value="off">Off</option>
+          <option value="reports">Number of reports</option>
+          <option value="hotspots">Number of hotspots</option>
+          <option value="longest">Longest open</option>
+        </select>
+      </label>
     </div>
     <span class="stat" id="updated"></span>
     <button id="refresh-btn" type="button">Refresh</button>
