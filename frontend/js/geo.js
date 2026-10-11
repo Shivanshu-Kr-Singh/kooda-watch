@@ -97,7 +97,7 @@
     for (var i = 0; i < keys.length; i++) {
       if (typeof props[keys[i]] === "string" && props[keys[i]].trim()) return props[keys[i]].trim();
     }
-    return "Unnamed ward";
+    return "Unnamed area (no ward name in the boundary file)";
   }
 
   /* ---------- display helpers ---------- */
