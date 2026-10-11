@@ -4,6 +4,9 @@
   var G = window.KoodaGeo;
   var KEY_STORE = "kooda-officer-key";
   var DELHI_CENTER = [28.6139, 77.2090];
+  // Shown in the legend so nobody mistakes demo boundaries for the official ones.
+  // Update (or set to "") when you swap in a different frontend/data/wards.geojson.
+  var WARD_SOURCE_NOTE = "Ward boundaries: 2017 delimitation (demo)";
 
   var $ = function (id) { return document.getElementById(id); };
   var loginEl = $("login"), loginForm = $("login-form"), keyInput = $("key-input");
@@ -36,7 +39,10 @@
       "<b>Open for</b><br>" +
       "<i style='background:" + G.ageColor(0) + "'></i>under 3 days<br>" +
       "<i style='background:" + G.ageColor(5) + "'></i>3 to 14 days<br>" +
-      "<i style='background:" + G.ageColor(20) + "'></i>over 14 days";
+      "<i style='background:" + G.ageColor(20) + "'></i>over 14 days" +
+      (WARD_SOURCE_NOTE
+        ? "<div style='margin-top:.35rem;color:#5f6b73;font-size:.72rem'>" + G.escapeHtml(WARD_SOURCE_NOTE) + "</div>"
+        : "");
     return div;
   };
   legend.addTo(map);

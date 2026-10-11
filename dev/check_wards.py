@@ -67,11 +67,19 @@ def main(path):
         problems.append("No properties, so the map cannot show ward names or numbers.")
 
     count = len(features)
+    numbers = []
+    for f in features:
+        value = str((f.get("properties") or {}).get("Ward_No", "")).strip()
+        if value.isdigit():
+            numbers.append(int(value))
     if count == 250:
         print("Ward count is 250: matches the current MCD wards (2022 delimitation).")
-    elif count == 272:
-        problems.append("272 wards = the OLD 2017 delimitation. Ward numbers and names will not match "
-                        "today's MCD. Look for the 2022 (250-ward) boundaries.")
+    elif numbers and max(numbers) == 272:
+        print("Ward numbers run 1-272: this looks like the OLD 2017 delimitation "
+              "(%d numbered wards, %d other features such as NDMC or Cantonment)." % (len(numbers), count - len(numbers)))
+        problems.append("Old (2017) boundaries: fine for a demo, but ward numbers and names will not match "
+                        "today's 250 MCD wards. Keep the legend note in frontend/js/officer.js "
+                        "(WARD_SOURCE_NOTE) honest, and swap in the 2022 file when you find it.")
     else:
         problems.append("Expected 250 wards for the current MCD, found %d. Check this is the right file." % count)
 

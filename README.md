@@ -60,10 +60,13 @@ Officers see photos through short-lived signed links (1 hour).
 
 ## Ward boundaries
 
-The map loads `frontend/data/wards.geojson`. **This file is not included**; you need to add it.
-Without it everything else works, and the page shows a notice.
+The map loads `frontend/data/wards.geojson`. Without it everything else works, and the page shows a notice.
 
-Use the **current** MCD boundaries (250 wards, 2022 delimitation). Where I'd look:
+**What is in the repo right now:** a 290-feature file with the **old 2017 delimitation** (MCD wards numbered 1 to 272, plus 9 NDMC charges and 8 Cantonment boards). It is here to demonstrate the feature, **not** as the official current boundaries: ward numbers and names will not match today's 250 MCD wards. The map legend says so. The code does not depend on the ward count, so swapping in the 250-ward file is just replacing the file (keep the `Ward_No` / `Ward_Name` fields, or any similarly named ones) and updating `WARD_SOURCE_NOTE` in `frontend/js/officer.js`.
+
+*Source of the file: to be added (credit the original publisher here).*
+
+For the **current** MCD boundaries (250 wards, 2022 delimitation), where I'd look:
 - **OpenCity**: a DataMeet thread (May 2023) says it hosts the 2022 delimitation ward and zone maps, sourced from Delhi's GSDL. I couldn't open it from where I built this, so I haven't confirmed the format or licence.
 - The official delimitation order and ward descriptions are PDFs on sec.delhi.gov.in. Those are not map data.
 - **Avoid** the Hindustan Times Labs shapefiles for this: they are the **2017** delimitation (272 wards), whose ward numbers and names no longer match.
