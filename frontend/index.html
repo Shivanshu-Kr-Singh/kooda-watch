@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kooda Watch - report a garbage dump</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>Kooda Watch</h1>
+      <p class="muted">Seen a garbage dump or waste being burned? Take a photo while you are standing there. It goes straight to the municipal team's map.</p>
+    </header>
+
+    <section class="card">
+      <span class="step-label">Step 1 &middot; Photo</span>
+      <img id="preview" class="preview hidden" alt="Preview of your photo">
+      <input id="photo-input" type="file" accept="image/*" capture="environment">
+      <button id="photo-btn" type="button">Take a photo</button>
+      <p class="muted" style="margin-top:.6rem">Please keep people's faces and number plates out of the frame.</p>
+    </section>
+
+    <section class="card">
+      <span class="step-label">Step 2 &middot; Location</span>
+      <div id="location-facts" class="hidden">
+        <div class="fact"><span>Latitude, longitude</span><span id="coords"></span></div>
+        <div class="fact"><span>GPS accuracy</span><span id="accuracy"></span></div>
+      </div>
+      <button id="gps-btn" type="button" class="secondary">Use my current location</button>
+      <div id="gps-note" class="notice hidden"></div>
+    </section>
+
+    <section class="card">
+      <span class="step-label">Step 3 &middot; Send</span>
+      <div class="fact"><span>Date and time</span><span id="when">Set when you take the photo</span></div>
+      <button id="submit-btn" type="button" style="margin-top:.75rem" disabled>Send report</button>
+      <div id="result" class="notice hidden"></div>
+    </section>
+  </main>
+
+  <script src="js/citizen.js"></script>
+</body>
+</html>

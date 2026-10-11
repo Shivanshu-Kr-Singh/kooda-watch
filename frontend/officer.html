@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kooda Watch - officer map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="officer">
+  <div class="topbar">
+    <h1>Kooda Watch &middot; Officer map</h1>
+    <span class="stat"><b id="stat-reports">-</b> reports</span>
+    <span class="stat"><b id="stat-hotspots">-</b> hotspots</span>
+    <span class="stat">longest open <b id="stat-oldest">-</b></span>
+    <span class="spacer"></span>
+    <div class="layers">
+      <label><input type="checkbox" id="layer-heat" checked> Heatmap</label>
+      <label><input type="checkbox" id="layer-spots" checked> Hotspots</label>
+      <label><input type="checkbox" id="layer-wards" checked> Ward boundaries</label>
+    </div>
+    <span class="stat" id="updated"></span>
+    <button id="refresh-btn" type="button">Refresh</button>
+  </div>
+  <div id="banner" class="banner hidden"></div>
+  <div id="map"></div>
+
+  <div id="login" class="login">
+    <form id="login-form">
+      <h2>Officer sign-in</h2>
+      <p class="muted">Enter the officer passcode to see reports.</p>
+      <input id="key-input" type="password" autocomplete="current-password" placeholder="Passcode" required>
+      <button type="submit">Open map</button>
+      <p id="login-error" class="notice error hidden"></p>
+    </form>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/officer.js"></script>
+</body>
+</html>
